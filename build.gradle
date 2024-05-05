@@ -111,7 +111,6 @@ processResources {
     inputs.property "modid", project.modId
 
     inputs.property "url", project.url
-    inputs.property "authorList", [project.authorList]
     inputs.property "logo", project.logo
     inputs.property "dependencies", dependenciesList
 
@@ -122,7 +121,6 @@ processResources {
                 'modname': project.modName,
                 'modid': project.modId,
                 'url': project.url,
-                'authorList': [project.authorList],
                 'logo': project.logo,
                 'dependencies': dependenciesList
     }
