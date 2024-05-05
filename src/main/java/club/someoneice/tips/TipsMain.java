@@ -78,13 +78,14 @@ public class TipsMain {
         Files.write(configFile.toPath(), gson.toJson(TIPS).getBytes());
     }
 
-    public static int tickOfClientInRender = 0;
-    public static String tipHolder = "";
+    static int tickOfClientInRender = 0;
+    static String tipHolder = "";
+    static Random random = new Random();
 
     public static void getAndDrawTip(FontRenderer font, int x, int y) {
-        if (tipHolder.isEmpty() || ++tickOfClientInRender >= 60) {
+        if (tipHolder.isEmpty() || ++tickOfClientInRender >= 100) {
             tickOfClientInRender = 0;
-            tipHolder = TIPS.get(new Random().nextInt(TIPS.size()));
+            tipHolder = TIPS.get(random.nextInt(TIPS.size()));
         }
 
         font.drawString("§l§eTips:", x, y, Color.WHITE.getRGB());
