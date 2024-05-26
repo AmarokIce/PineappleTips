@@ -16,13 +16,11 @@ import net.tclproject.mysteriumlib.asm.annotations.Fix;
 import net.tclproject.mysteriumlib.asm.annotations.FixOrder;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
-
 public class ASMLoadingScreenRenderer {
     @Fix(order = FixOrder.FIRST, returnSetting = EnumReturnSetting.ALWAYS)
     public static void setLoadingProgress(LoadingScreenRenderer instance, int loadProgress) {
         /* Reflection Field Start */
-        Minecraft mc = reflection(instance, "mc");
+        Minecraft mc = Minecraft.getMinecraft();
         boolean progress = reflection(instance, "field_73724_e");
         boolean running = ReflectionHelper.getPrivateValue(Minecraft.class, mc, "running");
 
@@ -37,7 +35,8 @@ public class ASMLoadingScreenRenderer {
         long j = Minecraft.getSystemTime();
         long time = reflection(instance, "field_73723_d");
         if (j - time < 100L) return;
-        reflectionSet(instance, "field_73723_d", j);
+
+        ReflectionHelper.setPrivateValue(LoadingScreenRenderer.class, instance, j, "field_73723_d");
 
         ScaledResolution scaledresolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
         int k = scaledresolution.getScaleFactor();
@@ -120,9 +119,5 @@ public class ASMLoadingScreenRenderer {
 
     private static <T> T reflection(LoadingScreenRenderer instance, String name) {
         return ReflectionHelper.getPrivateValue(LoadingScreenRenderer.class, instance, name);
-    }
-
-    private static <T> void reflectionSet(LoadingScreenRenderer instance, String name, T value) {
-        ReflectionHelper.setPrivateValue(LoadingScreenRenderer.class, instance, value, name);
     }
 }
