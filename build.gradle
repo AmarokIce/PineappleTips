@@ -19,8 +19,6 @@ buildscript {
         classpath('com.anatawa12.forge:ForgeGradle:1.2-1.1.+') {
             changing = true
         }
-
-        if (project.enableUsingKotlin.toBoolean()) { classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$project.kotlin_version" }
     }
 }
 
@@ -29,15 +27,6 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
-
-if (project.enableUsingKotlin.toBoolean()) {
-    apply plugin: 'kotlin'
-    apply plugin: 'org.jetbrains.kotlin.jvm'
-}
-
-if (project.enableUsingScala.toBoolean()) {
-    apply plugin: 'scala'
-}
 
 version = "${project.modVersion}"
 group = "${project.modGroupId}"
@@ -62,12 +51,6 @@ repositories {
     }
 
     maven {
-        name "Amarok Maven"
-        url "http://maven.snowlyicewolf.club/"
-        allowInsecureProtocol true
-    }
-
-    maven {
         name "Curse Maven"
         url "https://cursemaven.com"
     }
@@ -79,22 +62,9 @@ repositories {
 }
 
 dependencies {
-    if (project.enableUsingKotlin.toBoolean()) {
-        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-        implementation "curse.maven:AJSCore-445557:$asjcore_laster"
-    }
-
     if (project.enableUsingMysteriumLib.toBoolean()) {
         implementation "curse.maven:MysteriumLib-645051:3963822"
     }
-
-    implementation "club.someoneice.pineapplepsychic:pineapple-psychic:${project.psychic_version}"
-    implementation "club.someoneice.togocup.pineapple_tag:pineapple-tag:${project.tags_version}"
-    implementation "club.someoneice.togocup.recipebook:PineappleRecipeBook:${project.recipe_book_version}"
-
-    implementation "maven.modrinth:notenoughitems-unofficial:${project.nei_version}-GTNH"
-    implementation "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
-    implementation "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
 
     implementation fileTree(dir: 'lib', includes: ['*.jar'])
 }
