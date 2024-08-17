@@ -14,6 +14,7 @@ import cpw.mods.fml.relauncher.ReflectionHelper;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
@@ -49,6 +50,9 @@ public class TipsMain {
         INSTANCE = this;
 
         readConfig();
+        List<String> tips = Lists.newArrayList(TIPS);
+        TIPS.clear();
+        tips.stream().map(I18n::format).forEach(TIPS::add);
 
         MinecraftForge.EVENT_BUS.register(this);
         FMLCommonHandler.instance().bus().register(this);
