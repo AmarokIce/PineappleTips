@@ -1,6 +1,7 @@
 package club.someoneice.tips;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -10,6 +11,7 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.multiplayer.GuiConnecting;
@@ -27,107 +29,122 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Mod(modid = TipsMain.MODID, name = TipsMain.NAME, useMetadata = true)
 public class TipsMain {
-    public static final String MODID = "tips";
-    public static final String NAME = "PineappleTips";
-    public static final String VERSION = "@VERSION@";
+  public static final String MODID = "tips";
+  public static final String NAME = "PineappleTips";
+  public static final String VERSION = "@VERSION@";
 
-    public static final Logger LOG = LogManager.getLogger(NAME);
+  public static final Logger LOG = LogManager.getLogger(NAME);
+  public static final List<String> TIPS = Lists.newArrayList();
+  public static int TIME = 100;
+  @Mod.Instance(MODID)
+  public static TipsMain INSTANCE;
+  static int tickOfClientInRender = 0;
+  static String tipHolder = "";
+  static Random random = new Random();
+  public boolean obfuscated;
+  /* Common Event */
+  @SuppressWarnings("unchecked")
+  List<Class<? extends GuiScreen>> screens = Lists.newArrayList(
+    GuiGameOver.class,
+    GuiConnecting.class,
+    GuiDisconnected.class,
+    GuiIngameMenu.class
+  );
 
-    @Mod.Instance(MODID)
-    public static TipsMain INSTANCE;
+  /* Common Method */
+  private static void readConfig() throws IOException {
+    File configFile = new File(Loader.instance().getConfigDir(), NAME + ".json");
+    Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
-    public boolean obfuscated;
+    if (configFile.isFile()) {
+      final Map<String, Object> map = gson.fromJson(new String(Files.readAllBytes(configFile.toPath())),
+        new TypeToken<Map<String, Object>>() {}.getType());
+      if (map.containsKey("tips")) {
+        TIPS.addAll((List<String>) map.get("tips"));
+      }
 
-    public static final List<String> TIPS = Lists.newArrayList();
-
-    /* Init Event */
-    @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event) throws IOException {
-        INSTANCE = this;
-
-        readConfig();
-        List<String> tips = Lists.newArrayList(TIPS);
-        TIPS.clear();
-        tips.stream().map(I18n::format).forEach(TIPS::add);
-
-        MinecraftForge.EVENT_BUS.register(this);
-        FMLCommonHandler.instance().bus().register(this);
+      if (map.containsKey("time")) {
+        TIME = (Integer) map.get("time");
+      }
+      return;
     }
 
-    @Mod.EventHandler
-    public void postInit(FMLPostInitializationEvent event) {
-        this.obfuscated = !(Boolean)Launch.blackboard.get("fml.deobfuscatedEnvironment");
+    configFile.createNewFile();
+    TIPS.add("凤梨级测试！");
+    TIPS.add("咩狼的尾巴有多长？");
+    TIPS.add("何不试试 ManaMetalMod ！");
+    TIPS.add("你是否做过一个 PasterDream ？");
+
+    final Map<String, Object> map = Maps.newHashMap();
+    map.put("tips", TIPS);
+    map.put("time", TIME);
+
+    Files.write(configFile.toPath(), gson.toJson(map).getBytes());
+  }
+
+  public static void getAndDrawTip(final FontRenderer font, int x, int y) {
+    if (tipHolder.isEmpty() || tickOfClientInRender >= 100) {
+      tickOfClientInRender = 0;
+      tipHolder = TIPS.get(random.nextInt(TIPS.size()));
     }
 
-    /* Common Method */
-    private static void readConfig() throws IOException {
-        File configFile = new File(Loader.instance().getConfigDir(), NAME + ".json");
-        Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+    font.drawString("§l§eTips:", x, y, Color.WHITE.getRGB());
+    y += 10;
 
-        if (configFile.isFile()) {
-            TIPS.addAll(gson.fromJson(new String(Files.readAllBytes(configFile.toPath())), new TypeToken<List<String>>() {
-            }.getType()));
-            return;
-        }
-
-        configFile.createNewFile();
-        TIPS.add("凤梨级测试！");
-        TIPS.add("咩狼的尾巴有多长？");
-        TIPS.add("何不试试 ManaMetalMod ！");
-        TIPS.add("你是否做过一个 PasterDream ？");
-        Files.write(configFile.toPath(), gson.toJson(TIPS).getBytes());
+    if (tipHolder.length() < 20) font.drawString(tipHolder, x, y, Color.WHITE.getRGB());
+    else {
+      String tip0 = tipHolder.substring(0, 20);
+      String tip1 = tipHolder.substring(20);
+      font.drawString(tip0, x, y, Color.WHITE.getRGB());
+      font.drawString(tip1, x, y + 10, Color.WHITE.getRGB());
     }
+  }
 
-    static int tickOfClientInRender = 0;
-    static String tipHolder = "";
-    static Random random = new Random();
+  /* Init Event */
+  @Mod.EventHandler
+  public void preInit(FMLPreInitializationEvent event) throws IOException {
+    INSTANCE = this;
 
-    public static void getAndDrawTip(FontRenderer font, int x, int y) {
-        if (tipHolder.isEmpty() || ++tickOfClientInRender >= 100) {
-            tickOfClientInRender = 0;
-            tipHolder = TIPS.get(random.nextInt(TIPS.size()));
-        }
+    readConfig();
+    List<String> tips = Lists.newArrayList(TIPS);
+    TIPS.clear();
+    tips.stream().map(I18n::format).forEach(TIPS::add);
 
-        font.drawString("§l§eTips:", x, y, Color.WHITE.getRGB());
-        y += 10;
+    MinecraftForge.EVENT_BUS.register(this);
+    FMLCommonHandler.instance().bus().register(this);
+  }
 
-        if (tipHolder.length() < 20) font.drawString(tipHolder, x , y, Color.WHITE.getRGB());
-        else {
-            String tip0 = tipHolder.substring(0, 20);
-            String tip1 = tipHolder.substring(20);
-            font.drawString(tip0, x, y, Color.WHITE.getRGB());
-            font.drawString(tip1, x, y + 10, Color.WHITE.getRGB());
-        }
+  @Mod.EventHandler
+  public void postInit(FMLPostInitializationEvent event) {
+    this.obfuscated = !(Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
+  }
+
+  @SubscribeEvent
+  public void onScreenLoading(GuiScreenEvent.DrawScreenEvent.Post event) {
+    if (!screens.contains(event.gui.getClass())) return;
+    int x = 10;
+    int y = event.gui.height - event.gui.height / 10 - 10;
+    FontRenderer font = event.gui.mc.fontRenderer;
+    getAndDrawTip(font, x, y);
+  }
+
+  @SubscribeEvent
+  public void onScreenOpen(GuiOpenEvent event) {
+    if (!(event.gui instanceof GuiDownloadTerrain)) return;
+    try {
+      NetHandlerPlayClient npc = ReflectionHelper.getPrivateValue(GuiDownloadTerrain.class, (GuiDownloadTerrain) event.gui, "field_146594_a");
+      event.gui = new GuiLoadingWorldWithTips(npc);
+    } catch (Exception ignored) {
     }
+  }
 
-    /* Common Event */
-    @SuppressWarnings("unchecked")
-    List<Class<? extends GuiScreen>> screens = Lists.newArrayList(
-            GuiGameOver.class,
-            GuiConnecting.class,
-            GuiDisconnected.class,
-            GuiIngameMenu.class
-    );
-
-    @SubscribeEvent
-    public void onScreenLoading(GuiScreenEvent.DrawScreenEvent.Post event) {
-        if (!screens.contains(event.gui.getClass())) return;
-        int x = 10;
-        int y = event.gui.height - event.gui.height / 10 - 10;
-        FontRenderer font = event.gui.mc.fontRenderer;
-        getAndDrawTip(font, x , y);
-    }
-
-    @SubscribeEvent
-    public void onScreenOpen(GuiOpenEvent event) {
-        if (!(event.gui instanceof GuiDownloadTerrain)) return;
-        try {
-            NetHandlerPlayClient npc = ReflectionHelper.getPrivateValue(GuiDownloadTerrain.class, (GuiDownloadTerrain) event.gui, "field_146594_a");
-            event.gui = new GuiLoadingWorldWithTips(npc);
-        } catch (Exception ignored) {}
-    }
+  @SubscribeEvent
+  public void clientTickEvent(final TickEvent.ClientTickEvent event) {
+    ++tickOfClientInRender;
+  }
 }
